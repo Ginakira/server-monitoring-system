@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# 获取磁盘信息
+
 function print_data() {
     line=$1
     type=$2 # 1-Partition 0-Disk
