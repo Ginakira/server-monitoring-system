@@ -50,9 +50,9 @@ fi
 echo -n " "
 
 # 内存报警级别
-if [ $disk_use -lt 70 ]; then
+if [ $mem_percent -lt 70 ]; then
     echo -n "normal"
-elif [ $disk_use -lt 80 ]; then
+elif [ $mem_percent -lt 80 ]; then
     echo -n "note"
 else
     echo -n "warning"
@@ -60,9 +60,9 @@ fi
 echo -n " "
 
 # CPU报警级别
-if [ $disk_use -lt 50 ]; then
+if [ $(echo "$temp<50" | bc) == 1 ]; then
     echo -n "normal"
-elif [ $disk_use -lt 70 ]; then
+elif [ $(echo "$temp<70" | bc) == 1 ]; then
     echo -n "note"
 else
     echo -n "warning"
