@@ -32,4 +32,4 @@ elif [[ $(echo "${cpu_temp} >= 50" | bc -l) == 1 ]]; then
     warn_level="note"
 fi
 
-echo "${time_info} ${load_avg} ${cpu_used_per}% ${cpu_temp} ${warn_level}"
+echo "${time_info} ${load_avg} ${cpu_used_per}% ${cpu_temp}℃ ${warn_level}"
