@@ -2,33 +2,15 @@
 
 # 获取磁盘信息
 
-function print_data() {
-    line=$1
-    type=$2 # 1-Partition 0-Disk
-    time_info=$3
-
-    if [[ ${type} == 1 ]]; then
-        name=$(echo $line | awk '{print $6}')
-    else
-        name="disk"
-    fi
-
-    size=$(echo $line | awk '{print $2}')
-    available=$(echo $line | awk '{print $4}')
-    use_percent=$(echo $line | awk '{print $5}')
-
-    printf "%s %d %s %s %s %s\n" $time_info $type $name $size $available $use_percent
-}
-
 time_info=$(date +%Y-%m-%d__%H:%M:%S)
 
-rows=$(df -m | awk 'END{print NR}')
+eval $(df -T -m -x tmpfs -x devtmpfs | tail -n +2 | awk -v disk_sum=0 -v disk_left=0 \
+    '{printf("p_name["NR"]=%s;p_sum["NR"]=%d;p_left["NR"]=%d;p_useper["NR"]=%s;", $7, $3, $4, $6); disk_sum+=$3; disk_left+=$5} \
+END {printf("p_num=%d;disk_sum=%d;disk_left=%d;", NR, disk_sum, disk_left)}')
 
-for ((i = 2; i <= $rows; ++i)); do
-    line=$(df -m | sed -n "${i}p")
-    #echo $line
-    print_data "$line" 1 "$time_info"
+for ((i = 1; i <= ${p_num}; ++i)); do
+    echo "${time_info} 1 ${p_name[$i]} ${p_sum[$i]} ${p_left[$i]} ${p_useper[$i]}"
 done
 
-total_line=$(df -m --total | tail -n 1)
-print_data "$total_line" 0 "$time_info"
+disk_per=$((100 - ${disk_left} * 100 / ${disk_sum}))
+echo "${time_info} 0 disk ${disk_sum} ${disk_left} ${disk_per}%"
