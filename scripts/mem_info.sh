@@ -15,7 +15,7 @@ fi
 time_info=$(date +%Y-%m-%d__%H:%M:%S)
 
 # 内存总量 内存已用 数组
-mem_values=($(free -m | head -2 | tail -1 | awk '{printf(“%s %s”), $2, $3}'))
+mem_values=($(free -m | head -2 | tail -1 | awk '{printf("%s %s"), $2, $3}'))
 
 mem_used_per=$(echo "scale=1; ${mem_values[1]}*100/${mem_values[0]}" | bc)
 
