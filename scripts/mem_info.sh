@@ -22,4 +22,4 @@ mem_used_per=$(echo "scale=1; ${mem_values[1]}*100/${mem_values[0]}" | bc)
 # 占用百分比动态平均值
 now_avg=$(echo "scale=1; 0.7*${mem_used_per}+0.3*${dynamic_avg}" | bc)
 
-echo "${time_info} ${mem_total}M ${mem_free}M ${use_per}% ${active_per}%"
+echo "${time_info} ${mem_values[0]}M $((${mem_values[0]} - ${mem_values[1]}))M ${mem_used_per}% ${now_avg}%"
