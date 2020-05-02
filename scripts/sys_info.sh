@@ -2,70 +2,53 @@
 
 # 获取系统信息
 
-time_info=$(date +%Y-%m-%d__%H:%M:%S)
+Time=$(date +%Y-%m-%d__%H:%M:%S)
 
 # 主机名
-host_name=$(hostname)
+HostName=$(hostname)
 
 # os版本
-os_ver=$(echo -e $(cat /etc/issue) | head -n 1 | tr ' ' '_' | sed 's/_$//')
+OsType=$(cat /etc/issue.net | tr ' ' '_')
 
 # 内核版本
-kernel_ver=$(uname -r)
+KernelVersion=$(uname -r)
 
 # 运行时间
-uptime=$(uptime -p | tr ' ' '_')
+UpTime=$(uptime -p | tr ' ' '_')
 
 # 平均负载
-load_ave=$(uptime | awk '{print $10 $11 $12}' | tr ',' ' ')
+LoadAvg=$(cut -d " " -f 1-3 /proc/loadavg)
 
-# 磁盘总量
-disk_total=$(df -m --total | tail -n 1 | awk '{print $2}')
-
-# 磁盘已用百分比
-disk_use=$(df -m --total | tail -n 1 | awk '{print $5}' | tr -d '%')
-
-# 内存总量
-mem_total=$(free -m | head -n 2 | tail -n 1 | awk '{print $2}')
-
-# 内存已用百分比
-mem_use=$(free -m | head -n 2 | tail -n 1 | awk '{print $3}')
-mem_percent=$(echo $(awk 'BEGIN{printf "%d\n",('$mem_use'/'$mem_total')*100}'))
-
-# CPU温度
-__temp=$(cat /sys/class/thermal/thermal_zone0/temp)
-temp=$(echo $(awk 'BEGIN{printf "%.2f\n",('$__temp'/1000)}'))
-
-echo -n $time_info' '$host_name' '$os_ver' '$kernel_ver' '$uptime' '$load_ave' '
-echo -n $disk_total' '$disk_use'% '$mem_total' '$mem_use'% '$temp' '
-
-# 磁盘报警级别
-if [ $disk_use -lt 80 ]; then
-    echo -n "normal"
-elif [ $disk_use -lt 90 ]; then
-    echo -n "note"
-else
-    echo -n "warning"
-fi
-echo -n " "
-
-# 内存报警级别
-if [ $mem_percent -lt 70 ]; then
-    echo -n "normal"
-elif [ $mem_percent -lt 80 ]; then
-    echo -n "note"
-else
-    echo -n "warning"
-fi
-echo -n " "
-
-# CPU报警级别
-if [ $(echo "$temp<50" | bc) == 1 ]; then
-    echo -n "normal"
-elif [ $(echo "$temp<70" | bc) == 1 ]; then
-    echo -n "note"
-else
-    echo -n "warning"
+# 磁盘总量 & 已用百分比
+eval $(df -T -x devtmpfs -x tmpfs -m --total | tail -n 1 | awk \
+    '{printf("DiskTotal=%s;DiskUsedP=%d;", $3, $6);}')
+DiskWarningLevel="normal"
+if [[ ${DiskUsedP} -gt 90 ]]; then
+    DiskWarningLevel="warning"
+elif [[ ${DiskUsedP} -gt 80 ]]; then
+    DiskWarningLevel="note"
 fi
 
-echo ""
+# 内存总量 & 已用百分比
+eval $(free -m | head -n 2 | tail -n 1 | awk \
+    '{printf("MemTotal=%s;MemUsed=%s;", $2, $3)}')
+MemUsedP=$((${MemUsed} * 100 / ${MemTotal}))
+MemWarningLevel="normal"
+if [[ ${MemUsedP} -gt 80 ]]; then
+    MemWarningLevel="warning"
+elif [[ ${MemUsedP} -gt 70 ]]; then
+    MemWarningLevel="note"
+fi
+
+# CPU温度(两位小数)
+CpuTemp=$(cat /sys/class/thermal/thermal_zone0/temp)
+CpuTemp=$(echo "scale=2; ${CpuTemp}/1000" | bc)
+CpuWarningLevel="normal"
+
+if [[ $(echo "${CpuTemp} >= 70" | bc -l) -eq 1 ]]; then
+    CpuWarningLevel="warning"
+elif [[ $(echo "${CpuTemp} >= 50" | bc -l) = 1 ]]; then
+    CpuWarningLevel="note"
+fi
+
+echo "${Time} ${HostName} ${OsType} ${KernelVersion} ${UpTime} ${LoadAvg} ${DiskTotal} ${DiskUsedP}% ${MemTotal} ${MemUsedP}% ${CpuTemp} ${DiskWarningLevel} ${MemWarningLevel} ${CpuWarningLevel}"
